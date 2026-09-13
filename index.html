@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Gym Tracker</title>
+<meta name="theme-color" content="#0f1115" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <h1>🏋️ Gym Tracker <span class="level-badge" id="levelBadge">Lv 0</span></h1>
+    <div class="xp-bar-track"><div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div></div>
+    <div class="xp-bar-label"><span id="xpLabel">0 / 50 XP</span><span id="streakLabel">🔥 0 dana</span></div>
+  </header>
+
+  <main>
+
+    <!-- KALENDAR -->
+    <section class="view active" id="view-kalendar">
+      <div class="card">
+        <div class="calendar-month-nav">
+          <button id="prevMonth">‹</button>
+          <strong id="monthLabel">-</strong>
+          <button id="nextMonth">›</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+
+      <div class="section-title">Zadnji treninzi</div>
+      <div class="card" id="recentWorkoutsCard">
+        <div class="empty-state">Još nema treninga. Dodaj prvi u tabu "Trening"!</div>
+      </div>
+    </section>
+
+    <!-- TRENING -->
+    <section class="view" id="view-trening">
+      <div class="card">
+        <h2>Novi trening</h2>
+
+        <label for="templateSelect">Predložak (opcionalno)</label>
+        <select id="templateSelect"><option value="">— nema predloška —</option></select>
+        <div class="row" style="margin-bottom:10px;">
+          <button class="ghost" id="loadTemplateBtn">Učitaj</button>
+          <button class="danger" id="deleteTemplateBtn">Obriši predložak</button>
+        </div>
+
+        <label for="workoutDate">Datum</label>
+        <input type="date" id="workoutDate" />
+
+        <label for="gymSelect">Teretana</label>
+        <select id="gymSelect"></select>
+
+        <div id="exerciseList"></div>
+
+        <button class="block ghost" id="addExerciseBtn" style="margin-bottom:8px;">+ Dodaj vježbu</button>
+        <button class="block ghost" id="saveTemplateBtn">💾 Spremi trenutno kao predložak</button>
+      </div>
+
+      <div class="card">
+        <h3>⏱ Odmor između serija</h3>
+        <div class="row" style="margin-bottom:10px;">
+          <button class="ghost" data-rest="30">30s</button>
+          <button class="ghost" data-rest="60">60s</button>
+          <button class="ghost" data-rest="90">90s</button>
+        </div>
+        <div id="restTimerDisplay" style="text-align:center;font-size:34px;font-weight:700;display:none;padding:6px 0;"></div>
+        <button class="block danger" id="stopRestBtn" style="display:none;">Zaustavi</button>
+      </div>
+
+      <button class="block primary" id="saveWorkoutBtn" style="margin-bottom:8px;">💾 Spremi trening</button>
+      <button class="block ghost" id="cancelEditBtn" style="display:none;margin-bottom:14px;">Otkaži uređivanje</button>
+
+      <div class="section-title">Treninzi danas</div>
+      <div class="card" id="todayWorkoutsCard">
+        <div class="empty-state">Nema unesenih treninga za danas.</div>
+      </div>
+    </section>
+
+    <!-- CARDIO -->
+    <section class="view" id="view-cardio">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px;">🏃</div>
+        <div id="cardioMonthCount" style="font-size:22px;font-weight:700;">0 cardio ovaj mjesec</div>
+        <div class="meta" style="color:var(--text-dim);font-size:12px;" id="cardioMonthMinutes">0 min ukupno</div>
+      </div>
+
+      <div class="card">
+        <h2>Novi cardio</h2>
+        <label for="cardioDate">Datum</label>
+        <input type="date" id="cardioDate" />
+        <label for="cardioType">Vrsta</label>
+        <input type="text" id="cardioType" list="cardioTypes" placeholder="npr. Trčanje" />
+        <datalist id="cardioTypes">
+          <option value="Trčanje"></option>
+          <option value="Biciklizam"></option>
+          <option value="Eliptical"></option>
+          <option value="Veslanje"></option>
+          <option value="Skakanje užeta"></option>
+          <option value="Plivanje"></option>
+        </datalist>
+        <label for="cardioDuration">Trajanje (min)</label>
+        <input type="number" id="cardioDuration" placeholder="npr. 30" />
+        <label for="cardioDistance">Udaljenost (km, opcionalno)</label>
+        <input type="number" step="0.1" id="cardioDistance" placeholder="npr. 5" />
+        <label for="cardioNotes">Bilješke (opcionalno)</label>
+        <textarea id="cardioNotes" rows="2" placeholder="npr. interval trening"></textarea>
+        <button class="block primary" id="saveCardioBtn">Spremi cardio</button>
+      </div>
+
+      <div class="section-title">Povijest</div>
+      <div class="card" id="cardioHistoryCard">
+        <div class="empty-state">Nema unesenih cardio sesija.</div>
+      </div>
+    </section>
+
+    <!-- VAGANJE -->
+    <section class="view" id="view-vaganje">
+      <div class="card">
+        <h2>Dnevno vaganje</h2>
+        <label for="bwDate">Datum</label>
+        <input type="date" id="bwDate" />
+        <label for="bwWeight">Kilaža (kg)</label>
+        <input type="number" step="0.1" id="bwWeight" placeholder="npr. 82.4" />
+        <button class="block primary" id="saveBwBtn">Spremi kilažu</button>
+      </div>
+
+      <div class="card">
+        <h3>Graf kroz vrijeme</h3>
+        <canvas id="weightChart" height="220"></canvas>
+      </div>
+
+      <div class="section-title">Povijest</div>
+      <div class="card" id="bwHistoryCard">
+        <div class="empty-state">Nema unosa još.</div>
+      </div>
+    </section>
+
+    <!-- SPRAVE -->
+    <section class="view" id="view-sprave">
+      <div class="card">
+        <h2>Sprave po teretanama</h2>
+        <div class="chip-row" id="gymChips"></div>
+        <button class="block ghost" id="addMachineBtn">📷 Dodaj spravu (slika)</button>
+      </div>
+      <div class="machine-grid" id="machineGrid"></div>
+    </section>
+
+    <!-- NAPREDAK -->
+    <section class="view" id="view-napredak">
+      <div class="card">
+        <h2>Razina i iskustvo</h2>
+        <div class="xp-bar-track" style="height:14px;"><div class="xp-bar-fill" id="xpBarFill2" style="width:0%"></div></div>
+        <div class="xp-bar-label" style="margin-top:8px;">
+          <span id="xpLabel2">0 / 50 XP</span>
+          <span id="levelLabel2">Level 0</span>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <div class="streak-flame">🔥</div>
+        <div id="streakBig" style="font-size:22px;font-weight:700;">0 dana zaredom</div>
+        <div class="meta" style="color:var(--text-dim);font-size:12px;">ukupno treninga: <span id="totalWorkoutsLabel">0</span></div>
+      </div>
+
+      <div class="section-title">Bedževi</div>
+      <div class="card">
+        <div class="badge-grid" id="badgeGrid"></div>
+      </div>
+
+      <div class="section-title">Napredak po vježbi</div>
+      <div class="card">
+        <select id="exerciseProgressSelect"></select>
+        <canvas id="exerciseChart" height="220"></canvas>
+      </div>
+
+      <div class="section-title">Podaci</div>
+      <div class="card">
+        <button class="block ghost" id="exportDataBtn" style="margin-bottom:8px;">⬇️ Izvezi backup (JSON)</button>
+        <button class="block ghost" id="importDataBtn" style="margin-bottom:8px;">⬆️ Uvezi backup (JSON)</button>
+        <input type="file" id="importDataInput" accept="application/json" style="display:none;" />
+        <button class="block danger" id="resetAllBtn">🗑️ Resetiraj sve podatke</button>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button data-view="view-kalendar" class="active"><span class="icon">📅</span>Kalendar</button>
+    <button data-view="view-trening"><span class="icon">✏️</span>Trening</button>
+    <button data-view="view-cardio"><span class="icon">🏃</span>Cardio</button>
+    <button data-view="view-vaganje"><span class="icon">⚖️</span>Vaganje</button>
+    <button data-view="view-sprave"><span class="icon">🏢</span>Sprave</button>
+    <button data-view="view-napredak"><span class="icon">🏆</span>Napredak</button>
+  </nav>
+
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<input type="file" id="machinePhotoInput" accept="image/*" capture="environment" style="display:none;" />
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
