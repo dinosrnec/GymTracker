@@ -151,6 +151,10 @@ const DB = {
     const store = await tx("templates", "readwrite");
     return promisifyRequest(store.delete(id));
   },
+  async putTemplate(template) {
+    const store = await tx("templates", "readwrite");
+    return promisifyRequest(store.put(template));
+  },
   async getAllTemplates() {
     const store = await tx("templates");
     return promisifyRequest(store.getAll());
@@ -160,6 +164,10 @@ const DB = {
   async addExerciseName(name) {
     const store = await tx("exerciseNames", "readwrite");
     return promisifyRequest(store.put({ name }));
+  },
+  async deleteExerciseName(name) {
+    const store = await tx("exerciseNames", "readwrite");
+    return promisifyRequest(store.delete(name));
   },
   async getAllExerciseNames() {
     const store = await tx("exerciseNames");
@@ -207,7 +215,8 @@ const DB = {
         unlockedBadges: await DB.getMeta("unlockedBadges", []),
         prCount: await DB.getMeta("prCount", 0),
         exerciseMaxWeights: await DB.getMeta("exerciseMaxWeights", {}),
-        customGyms: await DB.getMeta("customGyms", [])
+        customGyms: await DB.getMeta("customGyms", []),
+        weeklyGoal: await DB.getMeta("weeklyGoal", 4)
       }
     };
   },
@@ -245,6 +254,7 @@ const DB = {
       await DB.setMeta("prCount", data.meta.prCount || 0);
       await DB.setMeta("exerciseMaxWeights", data.meta.exerciseMaxWeights || {});
       await DB.setMeta("customGyms", data.meta.customGyms || []);
+      await DB.setMeta("weeklyGoal", data.meta.weeklyGoal || 4);
     }
   },
 

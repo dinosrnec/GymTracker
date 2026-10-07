@@ -1,5 +1,10 @@
 // gamification.js - čisto računanje XP/levela/streaka/bedževa (bez DB pristupa)
 
+// Datum u LOKALNOJ vremenskoj zoni kao "YYYY-MM-DD" (toISOString bi vratio UTC i pomaknuo dan)
+const ymd = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+window.ymd = ymd;
+
 const GAMI = {
   // XP za jedan zabilježeni trening
   xpForWorkout(workout) {
@@ -48,26 +53,36 @@ const GAMI = {
     };
   },
 
-  // Streak: niz uzastopnih dana (do danas ili jučer) s barem jednim treningom
-  computeStreak(workoutDates) {
-    if (!workoutDates || workoutDates.length === 0) return 0;
-    const uniqueDays = [...new Set(workoutDates)].sort();
-    const daySet = new Set(uniqueDays);
-    const today = new Date();
-    const fmt = (d) => d.toISOString().slice(0, 10);
+  // Ponedjeljak tjedna u kojem je zadani datum ("YYYY-MM-DD")
+  weekStart(dateStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    const dow = (dt.getDay() + 6) % 7; // pon = 0
+    dt.setDate(dt.getDate() - dow);
+    return ymd(dt);
+  },
 
-    let cursor = new Date(today);
-    // ako danas nije odrađen trening, kreni provjeru od jučer (da danas ne "kvari" streak dok dan traje)
-    if (!daySet.has(fmt(cursor))) {
-      cursor.setDate(cursor.getDate() - 1);
+  // Tjedni streak: broj uzastopnih tjedana u kojima je odrađeno barem `goal` aktivnosti
+  // (treninzi + cardio). Tjedan koji je u tijeku ne prekida streak dok se cilj ne ispuni.
+  computeWeeklyStreak(activityDates, goal) {
+    const counts = {};
+    for (const d of activityDates || []) {
+      const w = GAMI.weekStart(d);
+      counts[w] = (counts[w] || 0) + 1;
     }
+    const todayWeek = GAMI.weekStart(ymd(new Date()));
+    const thisWeekCount = counts[todayWeek] || 0;
+
+    const [y, m, d] = todayWeek.split("-").map(Number);
+    const cursor = new Date(y, m - 1, d);
+    if (thisWeekCount < goal) cursor.setDate(cursor.getDate() - 7);
 
     let streak = 0;
-    while (daySet.has(fmt(cursor))) {
+    while ((counts[ymd(cursor)] || 0) >= goal) {
       streak++;
-      cursor.setDate(cursor.getDate() - 1);
+      cursor.setDate(cursor.getDate() - 7);
     }
-    return streak;
+    return { streak, thisWeekCount };
   },
 
   // Definicije bedževa: id, naziv, emoji, uvjet(stats) -> bool
@@ -76,9 +91,9 @@ const GAMI = {
     { id: "workouts_10", name: "10 treninga", emoji: "🔥", cond: (s) => s.totalWorkouts >= 10 },
     { id: "workouts_50", name: "50 treninga", emoji: "💪", cond: (s) => s.totalWorkouts >= 50 },
     { id: "workouts_100", name: "100 treninga", emoji: "🏆", cond: (s) => s.totalWorkouts >= 100 },
-    { id: "streak_3", name: "3 dana zaredom", emoji: "⚡", cond: (s) => s.streak >= 3 },
-    { id: "streak_7", name: "Tjedan dana zaredom", emoji: "🌟", cond: (s) => s.streak >= 7 },
-    { id: "streak_30", name: "Mjesec dana zaredom", emoji: "👑", cond: (s) => s.streak >= 30 },
+    { id: "week_2", name: "2 tjedna cilja zaredom", emoji: "⚡", cond: (s) => s.streak >= 2 },
+    { id: "week_4", name: "4 tjedna cilja zaredom", emoji: "🌟", cond: (s) => s.streak >= 4 },
+    { id: "week_12", name: "12 tjedana cilja zaredom", emoji: "👑", cond: (s) => s.streak >= 12 },
     { id: "first_bw", name: "Prvo vaganje", emoji: "⚖️", cond: (s) => s.bodyweightEntries >= 1 },
     { id: "bw_30", name: "30 vaganja", emoji: "📉", cond: (s) => s.bodyweightEntries >= 30 },
     { id: "first_machine", name: "Prva sprava fotkana", emoji: "📸", cond: (s) => s.machinePhotos >= 1 },
